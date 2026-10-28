@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import NavBar from '../components/NavBar.jsx'
 import BigButton from '../components/BigButton.jsx'
+import UseCaseBrief from '../components/UseCaseBrief.jsx'
 
 const buckets = [
   { label: 'Current', amount: '$18,400', color: '#10B981' },
@@ -11,6 +13,8 @@ const buckets = [
 
 export default function BillingAgingReport() {
   const navigate = useNavigate()
+  const [showPastDueOnly, setShowPastDueOnly] = useState(false)
+  const visibleBuckets = showPastDueOnly ? buckets.slice(1) : buckets
 
   return (
     <div className="min-h-screen bg-[#F3F4F6]">
@@ -27,8 +31,23 @@ export default function BillingAgingReport() {
         <h1 className="mb-2 text-2xl font-bold text-[#374151]">Accounts receivable aging</h1>
         <p className="mb-6 text-sm text-[#6B7280]">Snapshot only — not wired to a live ledger.</p>
 
+        <UseCaseBrief
+          audience="AR managers and finance leads planning collection activity."
+          value="Turns outstanding balances into clear age-based collection priorities."
+          objective="Understand exposure, isolate past-due balances, and return to the invoice workflow."
+        />
+
+        <div className="my-5 flex items-center justify-between gap-4">
+          <p className="m-0 text-sm font-semibold text-[#374151]">
+            {showPastDueOnly ? 'Past-due balances' : 'All receivables'}
+          </p>
+          <BigButton variant="ghost" onClick={() => setShowPastDueOnly((current) => !current)}>
+            {showPastDueOnly ? 'Show all' : 'Show past due only'}
+          </BigButton>
+        </div>
+
         <div className="flex flex-col gap-3">
-          {buckets.map((b) => (
+          {visibleBuckets.map((b) => (
             <div
               key={b.label}
               className="flex items-center justify-between rounded-lg border border-[#E5E7EB] bg-white p-4 text-[15px]"

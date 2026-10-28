@@ -1,6 +1,9 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import NavBar from '../components/NavBar.jsx'
 import BigButton from '../components/BigButton.jsx'
+import { InputField } from '../components/InputField.jsx'
+import UseCaseBrief from '../components/UseCaseBrief.jsx'
 
 const people = [
   { id: '1', name: 'Alex Rivera', role: 'Admin' },
@@ -11,6 +14,23 @@ const people = [
 
 export default function TeamMembersScreen() {
   const navigate = useNavigate()
+  const [members, setMembers] = useState(people)
+  const [inviteEmail, setInviteEmail] = useState('')
+  const [isInviting, setIsInviting] = useState(false)
+  const [notice, setNotice] = useState('')
+
+  const inviteMember = () => {
+    const email = inviteEmail.trim()
+    if (!email) return
+
+    setMembers((currentMembers) => [
+      ...currentMembers,
+      { id: `invite-${email}`, name: email, role: 'Viewer · Invited' },
+    ])
+    setInviteEmail('')
+    setIsInviting(false)
+    setNotice(`Invitation prepared for ${email}.`)
+  }
 
   return (
     <div className="min-h-screen bg-white">
@@ -21,8 +41,20 @@ export default function TeamMembersScreen() {
           Invite members, then wire billing and integrations from the header nav.
         </p>
 
-        <ul className="m-0 list-none p-0">
-          {people.map((p) => (
+        <UseCaseBrief
+          audience="Workspace admins managing membership and permissions."
+          value="Makes access visible and connects seat ownership to billing."
+          objective="Invite a teammate, review their role, and understand the impact on paid seats."
+        />
+
+        {notice && (
+          <p role="status" className="mt-5 rounded-md bg-[#ECFDF5] p-3 text-sm text-[#047857]">
+            {notice}
+          </p>
+        )}
+
+        <ul className="mt-5 list-none p-0">
+          {members.map((p) => (
             <li
               key={p.id}
               className="flex items-center justify-between border-b border-[#E5E7EB] px-4 py-3 text-sm"
@@ -34,13 +66,39 @@ export default function TeamMembersScreen() {
         </ul>
 
         <div className="mt-6 flex flex-wrap gap-3">
-          <BigButton variant="ghost" onClick={() => {}}>
+          <BigButton
+            variant="ghost"
+            onClick={() => {
+              setNotice('')
+              setIsInviting(true)
+            }}
+          >
             Invite user
           </BigButton>
           <BigButton variant="primary" onClick={() => navigate('/billing')}>
             Open billing for seats
           </BigButton>
         </div>
+
+        {isInviting && (
+          <div className="mt-4 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] p-4">
+            <InputField
+              labelText="Teammate email"
+              id="invite-email"
+              value={inviteEmail}
+              onChange={(event) => setInviteEmail(event.target.value)}
+              placeholder="name@company.com"
+            />
+            <div className="flex flex-wrap gap-2">
+              <BigButton variant="primary" onClick={inviteMember}>
+                Send invitation
+              </BigButton>
+              <BigButton variant="ghost" onClick={() => setIsInviting(false)}>
+                Cancel
+              </BigButton>
+            </div>
+          </div>
+        )}
 
         <p className="mt-6 text-sm text-[#9CA3AF]">
           Also try the{' '}

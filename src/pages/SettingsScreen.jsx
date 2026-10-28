@@ -3,12 +3,14 @@ import NavBar from '../components/NavBar.jsx'
 import { InputField } from '../components/InputField.jsx'
 import ToggleSwitch from '../components/ToggleSwitch.jsx'
 import BigButton from '../components/BigButton.jsx'
+import UseCaseBrief from '../components/UseCaseBrief.jsx'
 
 export default function SettingsScreen() {
   const [workspaceName, setWorkspaceName] = useState('Acme Ops')
   const [notifyEmail, setNotifyEmail] = useState(true)
   const [betaFeatures, setBetaFeatures] = useState(false)
   const [region, setRegion] = useState('us-east')
+  const [savedMessage, setSavedMessage] = useState('')
 
   return (
     <div className="min-h-screen bg-[#F9FAFB]">
@@ -17,7 +19,13 @@ export default function SettingsScreen() {
         <h1 className="mb-2 text-2xl font-semibold text-[#374151]">Workspace settings</h1>
         <p className="mb-6 text-sm text-[#6B7280]">Changes apply to this environment only.</p>
 
-        <div className="rounded-lg border border-[#E5E7EB] bg-white p-6">
+        <UseCaseBrief
+          audience="Workspace admins configuring organization-wide defaults."
+          value="Centralizes identity, notifications, feature access, and data residency."
+          objective="Review workspace preferences, make a controlled change, and save with confidence."
+        />
+
+        <div className="mt-5 rounded-lg border border-[#E5E7EB] bg-white p-6">
           <InputField
             labelText="Workspace name"
             id="ws-name"
@@ -56,9 +64,18 @@ export default function SettingsScreen() {
             <option value="apac">APAC</option>
           </select>
 
-          <BigButton variant="primary" extraStyle={{ marginTop: 4 }}>
+          <BigButton
+            variant="primary"
+            extraStyle={{ marginTop: 4 }}
+            onClick={() => setSavedMessage(`Settings saved for ${workspaceName}.`)}
+          >
             Save changes
           </BigButton>
+          {savedMessage && (
+            <p role="status" className="mb-0 mt-4 rounded-md bg-[#ECFDF5] p-3 text-sm text-[#047857]">
+              {savedMessage}
+            </p>
+          )}
         </div>
       </div>
     </div>

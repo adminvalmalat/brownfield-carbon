@@ -1,10 +1,22 @@
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import NavBar from '../components/NavBar.jsx'
 import { CardThing } from '../components/CardThing.jsx'
 import BigButton from '../components/BigButton.jsx'
+import UseCaseBrief from '../components/UseCaseBrief.jsx'
+
+const integrations = [
+  { name: 'Slack', status: 'Connected', detail: '#ops-alerts', needsAttention: false },
+  { name: 'Zapier', status: '2 zaps', detail: 'Last run 1h ago', needsAttention: false },
+  { name: 'Segment', status: 'Paused', detail: 'Needs API key', needsAttention: true },
+]
 
 export default function IntegrationsPage() {
   const navigate = useNavigate()
+  const [showNeedsAttention, setShowNeedsAttention] = useState(false)
+  const visibleIntegrations = showNeedsAttention
+    ? integrations.filter((integration) => integration.needsAttention)
+    : integrations
 
   return (
     <div className="min-h-screen bg-[#EFF6FF]">
@@ -15,10 +27,30 @@ export default function IntegrationsPage() {
           Connect tools, then pipe metrics into reports or billing alerts.
         </p>
 
+        <UseCaseBrief
+          audience="Operations and data admins responsible for connected workflows."
+          value="Shows connection health and where product signals are being delivered."
+          objective="Verify active connections, resolve a paused source, and choose an output workflow."
+        />
+
+        <div className="my-5 flex items-center justify-between gap-4">
+          <p className="m-0 text-sm font-semibold text-[#1E40AF]">
+            {showNeedsAttention ? 'Needs attention' : 'All integrations'}
+          </p>
+          <BigButton variant="ghost" onClick={() => setShowNeedsAttention((current) => !current)}>
+            {showNeedsAttention ? 'Show all' : 'Show needs attention'}
+          </BigButton>
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <CardThing stat="Slack" subtext="Connected" footerNote="#ops-alerts" />
-          <CardThing stat="Zapier" subtext="2 zaps" footerNote="Last run 1h ago" />
-          <CardThing stat="Segment" subtext="Paused" footerNote="Needs API key" />
+          {visibleIntegrations.map((integration) => (
+            <CardThing
+              key={integration.name}
+              stat={integration.name}
+              subtext={integration.status}
+              footerNote={integration.detail}
+            />
+          ))}
         </div>
 
         <div className="mt-8 flex flex-wrap gap-3">

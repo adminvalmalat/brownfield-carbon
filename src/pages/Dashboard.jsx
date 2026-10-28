@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import NavBar from '../components/NavBar.jsx'
 import { CardThing } from '../components/CardThing.jsx'
 import { TableV2 } from '../components/TableV2.jsx'
+import { InputField } from '../components/InputField.jsx'
+import UseCaseBrief from '../components/UseCaseBrief.jsx'
 import styles from './Dashboard.module.css'
 
 const tableStuff = {
@@ -16,12 +19,25 @@ const tableStuff = {
 }
 
 export default function Dashboard() {
+  const [accountSearch, setAccountSearch] = useState('')
+  const visibleAccounts = tableStuff.dataRows.filter((row) =>
+    row.cells.some((cell) => cell.toLowerCase().includes(accountSearch.toLowerCase())),
+  )
+
   return (
     <div className={styles.pageWrap}>
       <NavBar brand="Acme" />
       <main className={styles.mainArea}>
         <h1 className={styles.sectionTitle}>Overview</h1>
         <p className="mt-2 text-sm text-[#6B7280]">Last updated 2 minutes ago · internal only</p>
+
+        <div className="mt-4">
+          <UseCaseBrief
+            audience="Revenue and operations leaders monitoring day-to-day performance."
+            value="Puts customer, revenue, support, and reliability signals in one scan."
+            objective="Spot a change quickly, then move into the workflow that needs attention."
+          />
+        </div>
 
         <div className="mt-4 rounded-lg border border-[#E5E7EB] bg-white p-4 text-sm text-[#6B7280]">
           <span className="font-semibold text-[#374151]">Other flows:</span>{' '}
@@ -48,7 +64,22 @@ export default function Dashboard() {
         <div className={styles.cardPanel}>
           <h2 className="m-0 text-[17px] font-semibold text-[#374151]">Recent accounts</h2>
           <p className="mb-0 mt-2 text-[13px] text-[#9CA3AF]">Hardcoded preview data — do not use in prod</p>
-          <TableV2 headers={tableStuff.headers} dataRows={tableStuff.dataRows} />
+          <div className="mt-4 max-w-sm">
+            <InputField
+              labelText="Find an account"
+              id="account-search"
+              value={accountSearch}
+              onChange={(event) => setAccountSearch(event.target.value)}
+              placeholder="Search customer, plan, revenue, or status"
+            />
+          </div>
+          {visibleAccounts.length > 0 ? (
+            <TableV2 headers={tableStuff.headers} dataRows={visibleAccounts} />
+          ) : (
+            <p className="rounded-lg bg-[#F9FAFB] p-4 text-sm text-[#6B7280]">
+              No accounts match “{accountSearch}”.
+            </p>
+          )}
         </div>
       </main>
     </div>
