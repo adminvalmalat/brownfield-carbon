@@ -19,7 +19,8 @@ export default function App() {
         <Route path="/team" element={<TeamMembersScreen />} />
         <Route path="/integrations" element={<IntegrationsPage />} />
         <Route path="/settings" element={<SettingsScreen />} />
-        <Route path="/empty" element={<EmptyThing />} />
+        <Route path="/reports" element={<EmptyThing />} />
+        <Route path="/empty" element={<Navigate to="/reports" replace />} />
       </Routes>
     </BrowserRouter>
   )

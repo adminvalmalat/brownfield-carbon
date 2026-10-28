@@ -1,32 +1,79 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import {
+  Header,
+  HeaderMenuButton,
+  HeaderName,
+  HeaderNavigation,
+  HeaderMenuItem,
+  SideNav,
+  SideNavItems,
+  SideNavLink,
+  SkipToContent,
+} from '@carbon/react'
 
 const NAV_LINKS = [
   { to: '/dashboard', text: 'Dashboard' },
   { to: '/billing', text: 'Billing' },
   { to: '/team', text: 'Team' },
   { to: '/integrations', text: 'Integrations' },
-  { to: '/empty', text: 'Reports' },
+  { to: '/reports', text: 'Reports' },
   { to: '/settings', text: 'Settings' },
 ]
 
-/** Global app chrome — same links on every screen. */
-export default function NavBar({ brand }) {
+export default function NavBar() {
+  const navigate = useNavigate()
+  const location = useLocation()
+  const [sideNavOpen, setSideNavOpen] = useState(false)
+
+  const goTo = (path) => {
+    navigate(path)
+    setSideNavOpen(false)
+  }
+
   return (
-    <header className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E5E7EB] bg-white px-6 py-4">
-      <Link to="/dashboard" className="no-underline">
-        <div className="text-[22px] font-bold text-[#2563EB]">{brand}</div>
-      </Link>
-      <nav className="flex flex-wrap gap-4">
+    <Header aria-label="Acme operations">
+      <SkipToContent />
+      <HeaderMenuButton
+        aria-label={sideNavOpen ? 'Close navigation' : 'Open navigation'}
+        isActive={sideNavOpen}
+        onClick={() => setSideNavOpen((current) => !current)}
+      />
+      <HeaderName href="/dashboard" prefix="ACME">
+        Operations
+      </HeaderName>
+      <HeaderNavigation aria-label="Primary navigation">
         {NAV_LINKS.map((item) => (
-          <Link
+          <HeaderMenuItem
             key={item.to}
-            to={item.to}
-            className="text-[15px] font-medium text-[#3B82F6] no-underline hover:underline"
+            isActive={location.pathname === item.to || (item.to === '/billing' && location.pathname.startsWith('/billing'))}
+            onClick={() => goTo(item.to)}
           >
             {item.text}
-          </Link>
+          </HeaderMenuItem>
         ))}
-      </nav>
-    </header>
+      </HeaderNavigation>
+      <SideNav
+        aria-label="Mobile navigation"
+        expanded={sideNavOpen}
+        isPersistent={false}
+        onSideNavBlur={() => setSideNavOpen(false)}
+      >
+        <SideNavItems>
+          {NAV_LINKS.map((item) => (
+            <SideNavLink
+              key={item.to}
+              isActive={
+                location.pathname === item.to ||
+                (item.to === '/billing' && location.pathname.startsWith('/billing'))
+              }
+              onClick={() => goTo(item.to)}
+            >
+              {item.text}
+            </SideNavLink>
+          ))}
+        </SideNavItems>
+      </SideNav>
+    </Header>
   )
 }
