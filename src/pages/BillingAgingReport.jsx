@@ -1,70 +1,167 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import NavBar from '../components/NavBar.jsx'
-import BigButton from '../components/BigButton.jsx'
-import UseCaseBrief from '../components/UseCaseBrief.jsx'
+import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Button, InlineNotification, Modal, Select, SelectItem, Tile } from '@carbon/react'
+import { ArrowLeft, ArrowRight } from '@carbon/icons-react'
+import PageLayout from '../components/PageLayout.jsx'
+import CarbonTable from '../components/CarbonTable.jsx'
+import StatusTag from '../components/StatusTag.jsx'
 
 const buckets = [
-  { label: 'Current', amount: '$18,400', color: '#10B981' },
-  { label: '1–30 days', amount: '$3,200', color: '#3B82F6' },
-  { label: '31–60 days', amount: '$890', color: '#9CA3AF' },
-  { label: '61+ days', amount: '$120', color: '#EF4444' },
+  { id: 'current', label: 'Current', amount: '$18,400', count: 6 },
+  { id: '1-30', label: '1–30 days', amount: '$3,200', count: 3 },
+  { id: '31-60', label: '31–60 days', amount: '$890', count: 1 },
+  { id: '61-plus', label: '61+ days', amount: '$120', count: 1 },
+]
+
+const agingInvoices = [
+  {
+    id: 'INV-2403',
+    invoice: 'INV-2403',
+    customer: 'Fabrikam',
+    bucket: '61-plus',
+    due: 'May 30',
+    balance: '$120',
+    status: 'Overdue',
+  },
+  {
+    id: 'INV-2398',
+    invoice: 'INV-2398',
+    customer: 'Contoso',
+    bucket: '31-60',
+    due: 'Apr 28',
+    balance: '$890',
+    status: 'Overdue',
+  },
+]
+
+const headers = [
+  { key: 'invoice', header: 'Invoice' },
+  { key: 'customer', header: 'Customer' },
+  { key: 'due', header: 'Due date' },
+  { key: 'balance', header: 'Outstanding' },
+  { key: 'status', header: 'Status' },
 ]
 
 export default function BillingAgingReport() {
   const navigate = useNavigate()
-  const [showPastDueOnly, setShowPastDueOnly] = useState(false)
-  const visibleBuckets = showPastDueOnly ? buckets.slice(1) : buckets
+  const [bucket, setBucket] = useState('all')
+  const [detail, setDetail] = useState(null)
+  const filteredInvoices = useMemo(
+    () => (bucket === 'all' ? agingInvoices : agingInvoices.filter((invoice) => invoice.bucket === bucket)),
+    [bucket],
+  )
 
   return (
-    <div className="min-h-screen bg-[#F3F4F6]">
-      <NavBar brand="Acme" />
-      <div className="mx-auto max-w-xl px-6 py-8">
-        <p className="mb-3 text-sm">
-          <Link to="/billing" className="text-[#2563EB] no-underline hover:underline">
-            Billing
-          </Link>
-          <span className="text-[#9CA3AF]"> / </span>
-          <span className="text-[#6B7280]">Aging</span>
-        </p>
+    <PageLayout
+      eyebrow="Finance / Accounts receivable"
+      title="Aging report"
+      description="USD receivables as of Jun 24, 2026 · source: Acme billing ledger."
+      brief={{
+        audience: 'AR managers and finance leads planning collection activity.',
+        value: 'Turns outstanding balances into clear age-based collection priorities.',
+        objective: 'Inspect a bucket, identify the invoices behind it, and return without losing scope.',
+      }}
+    >
+      <InlineNotification
+        kind="info"
+        title="Shared reporting scope"
+        subtitle="Every total below uses the same as-of date, currency, and ledger source."
+        hideCloseButton
+        lowContrast
+      />
 
-        <h1 className="mb-2 text-2xl font-bold text-[#374151]">Accounts receivable aging</h1>
-        <p className="mb-6 text-sm text-[#6B7280]">Snapshot only — not wired to a live ledger.</p>
-
-        <UseCaseBrief
-          audience="AR managers and finance leads planning collection activity."
-          value="Turns outstanding balances into clear age-based collection priorities."
-          objective="Understand exposure, isolate past-due balances, and return to the invoice workflow."
-        />
-
-        <div className="my-5 flex items-center justify-between gap-4">
-          <p className="m-0 text-sm font-semibold text-[#374151]">
-            {showPastDueOnly ? 'Past-due balances' : 'All receivables'}
-          </p>
-          <BigButton variant="ghost" onClick={() => setShowPastDueOnly((current) => !current)}>
-            {showPastDueOnly ? 'Show all' : 'Show past due only'}
-          </BigButton>
-        </div>
-
-        <div className="flex flex-col gap-3">
-          {visibleBuckets.map((b) => (
-            <div
-              key={b.label}
-              className="flex items-center justify-between rounded-lg border border-[#E5E7EB] bg-white p-4 text-[15px]"
-              style={{ borderLeftWidth: 4, borderLeftColor: b.color }}
-            >
-              <span className="font-semibold text-[#374151]">{b.label}</span>
-              <span className="font-semibold text-[#111827]">{b.amount}</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-6">
-          <BigButton variant="ghost" onClick={() => navigate('/billing')}>
-            ← Back to invoices
-          </BigButton>
-        </div>
+      <div className="report-grid section-stack">
+        {buckets.map((item) => (
+          <Tile key={item.id} className="detail-tile">
+            <p className="tile-kicker">{item.label}</p>
+            <p className="metric-tile__value">{item.amount}</p>
+            <p className="supporting-copy">{item.count} invoices</p>
+            <Button kind="ghost" size="sm" onClick={() => setBucket(item.id)}>
+              Inspect bucket
+            </Button>
+          </Tile>
+        ))}
       </div>
-    </div>
+
+      <div className="section-stack">
+        <div className="section-heading">
+          <Select
+            id="aging-scope"
+            labelText="Aging bucket"
+            value={bucket}
+            onChange={(event) => setBucket(event.target.value)}
+          >
+            <SelectItem value="all" text="All overdue invoices" />
+            {buckets.slice(1).map((item) => (
+              <SelectItem key={item.id} value={item.id} text={item.label} />
+            ))}
+          </Select>
+          <Button kind="tertiary" renderIcon={ArrowLeft} onClick={() => navigate('/billing')}>
+            Back to invoices
+          </Button>
+        </div>
+        <CarbonTable
+          title="Bucket breakdown"
+          description={`${filteredInvoices.length} actionable overdue invoices`}
+          headers={headers}
+          rows={filteredInvoices}
+          renderCell={(cell, row) => {
+            if (cell.info.header === 'status') return <StatusTag status={cell.value} />
+            if (cell.info.header === 'invoice') {
+              return (
+                <span
+                  className="table-link"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => setDetail(agingInvoices.find((invoice) => invoice.id === row.id))}
+                  onKeyDown={(event) =>
+                    event.key === 'Enter' &&
+                    setDetail(agingInvoices.find((invoice) => invoice.id === row.id))
+                  }
+                >
+                  {cell.value}
+                </span>
+              )
+            }
+            return cell.value
+          }}
+        />
+      </div>
+
+      <Modal
+        open={Boolean(detail)}
+        modalHeading={detail ? `${detail.invoice} · ${detail.customer}` : 'Invoice detail'}
+        primaryButtonText="Continue to payment"
+        secondaryButtonText="Close"
+        onRequestClose={() => setDetail(null)}
+        onRequestSubmit={() => navigate('/billing')}
+      >
+        {detail && (
+          <div className="field-stack">
+            <div className="modal-summary">
+              <div>
+                <p className="tile-kicker">Due date</p>
+                <p>{detail.due}</p>
+              </div>
+              <div>
+                <p className="tile-kicker">Outstanding balance</p>
+                <p>{detail.balance} USD</p>
+              </div>
+            </div>
+            <Tile>
+              <p className="tile-kicker">Payment history</p>
+              <p>No payments recorded for this invoice.</p>
+            </Tile>
+            <Tile>
+              <p className="tile-kicker">Collection context</p>
+              <p>Last reminder sent Jun 17. Account owner: Jordan Lee.</p>
+            </Tile>
+            <Button kind="ghost" renderIcon={ArrowRight} onClick={() => navigate('/billing')}>
+              Open payment workflow
+            </Button>
+          </div>
+        )}
+      </Modal>
+    </PageLayout>
   )
 }

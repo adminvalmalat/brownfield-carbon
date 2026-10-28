@@ -1,114 +1,249 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import NavBar from '../components/NavBar.jsx'
-import { TableV2 } from '../components/TableV2.jsx'
-import BigButton from '../components/BigButton.jsx'
-import UseCaseBrief from '../components/UseCaseBrief.jsx'
+import { useMemo, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import {
+  Button,
+  Dropdown,
+  InlineNotification,
+  Modal,
+  NumberInput,
+  Tabs,
+  TabList,
+  Tab,
+  TabPanels,
+  TabPanel,
+  TextInput,
+  Tile,
+} from '@carbon/react'
+import { Add, ArrowRight, Renew } from '@carbon/icons-react'
+import PageLayout from '../components/PageLayout.jsx'
+import CarbonTable from '../components/CarbonTable.jsx'
+import StatusTag from '../components/StatusTag.jsx'
 
-const invoiceRows = {
-  headers: ['Invoice', 'Customer', 'Amount', 'Status'],
-  dataRows: [
-    { cells: ['INV-2401', 'Northwind LLC', '$4,200', 'Paid'] },
-    { cells: ['INV-2402', 'Contoso', '$890', 'Paid'] },
-    { cells: ['INV-2403', 'Fabrikam', '$120', 'Overdue'] },
-  ],
-}
+const initialInvoices = [
+  { id: 'INV-2401', invoice: 'INV-2401', customer: 'Northwind LLC', amount: '$4,200', due: 'Jun 05', status: 'Paid', balance: 0 },
+  { id: 'INV-2402', invoice: 'INV-2402', customer: 'Contoso', amount: '$890', due: 'Jun 18', status: 'Paid', balance: 0 },
+  { id: 'INV-2403', invoice: 'INV-2403', customer: 'Fabrikam', amount: '$120', due: 'May 30', status: 'Overdue', balance: 120 },
+]
+
+const headers = [
+  { key: 'invoice', header: 'Invoice' },
+  { key: 'customer', header: 'Customer' },
+  { key: 'amount', header: 'Original amount' },
+  { key: 'due', header: 'Due date' },
+  { key: 'status', header: 'Status' },
+]
+
+const paymentMethods = ['Bank transfer', 'Check', 'Cash', 'Other']
 
 export default function BillingInvoices() {
-  const [rows, setRows] = useState(invoiceRows.dataRows)
-  const [isConfirming, setIsConfirming] = useState(false)
+  const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [invoices, setInvoices] = useState(initialInvoices)
+  const [paymentOpen, setPaymentOpen] = useState(false)
+  const [selectedInvoice, setSelectedInvoice] = useState(initialInvoices[2])
+  const [amount, setAmount] = useState(120)
+  const [method, setMethod] = useState(paymentMethods[0])
+  const [reference, setReference] = useState('')
   const [notice, setNotice] = useState('')
-  const overdueInvoice = rows.find((row) => row.cells[3] === 'Overdue')
+  const [seatModalOpen, setSeatModalOpen] = useState(false)
+  const [seats, setSeats] = useState(5)
 
-  const recordPayment = () => {
-    setRows((currentRows) =>
-      currentRows.map((row) =>
-        row.cells[0] === overdueInvoice.cells[0]
-          ? { ...row, cells: [...row.cells.slice(0, 3), 'Paid'] }
-          : row,
+  const selectedTab = searchParams.get('view') === 'seats' ? 1 : 0
+  const duplicateReference = reference.trim().toLowerCase() === 'pay-2403'
+  const amountInvalid = amount <= 0 || amount > selectedInvoice.balance
+  const paymentInvalid = amountInvalid || !reference.trim() || duplicateReference
+  const outstandingInvoices = useMemo(() => invoices.filter((invoice) => invoice.balance > 0), [invoices])
+
+  const submitPayment = () => {
+    setInvoices((current) =>
+      current.map((invoice) =>
+        invoice.id === selectedInvoice.id
+          ? {
+              ...invoice,
+              balance: invoice.balance - amount,
+              status: invoice.balance - amount === 0 ? 'Paid' : 'Overdue',
+            }
+          : invoice,
       ),
     )
-    setIsConfirming(false)
-    setNotice(`${overdueInvoice.cells[0]} was marked as paid in this preview.`)
+    setNotice(
+      `${reference} recorded once for ${selectedInvoice.id}. Remaining balance: $${selectedInvoice.balance - amount}.`,
+    )
+    setPaymentOpen(false)
   }
 
   return (
-    <div className="min-h-screen bg-[#F3F4F6]">
-      <NavBar brand="Acme" />
-      <div className="mx-auto max-w-3xl px-6 py-8">
-        <h1 className="mb-2 text-2xl font-bold text-[#374151]">Billing & invoices</h1>
-        <p className="mb-4 text-sm text-[#6B7280]">
-          Finance flow — split charges by team or push totals to your ERP.
-        </p>
-
-        <UseCaseBrief
-          audience="Finance and operations teams responsible for cash collection."
-          value="Keeps invoice status and receivables follow-up in a single workspace."
-          objective="Identify outstanding cash, record a payment, and prioritize overdue invoices."
+    <PageLayout
+      eyebrow="Finance"
+      title="Billing"
+      description="Manage customer receivables separately from your Acme subscription and team seats."
+      brief={{
+        audience: 'Finance operators and subscription owners.',
+        value: 'Keeps receivable collection and workspace capacity clear without mixing the two.',
+        objective: 'Record a payment accurately or understand the cost of adding team capacity.',
+      }}
+    >
+      {notice && (
+        <InlineNotification
+          kind="success"
+          title="Update complete"
+          subtitle={notice}
+          lowContrast
+          onCloseButtonClick={() => setNotice('')}
         />
+      )}
 
-        <p className="my-4 text-sm">
-          <Link to="/billing/aging" className="font-semibold text-[#2563EB] no-underline hover:underline">
-            Open AR aging report →
-          </Link>
-        </p>
-
-        <div className="mb-4 rounded-lg border border-[#E5E7EB] bg-white p-5">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-3">
-            <span className="text-[15px] font-semibold text-[#374151]">Open invoices</span>
-            <BigButton
-              variant="primary"
-              extraStyle={{ padding: '8px 14px' }}
-              onClick={() => {
-                setNotice('')
-                setIsConfirming(true)
-              }}
-            >
-              Record payment
-            </BigButton>
-          </div>
-          {notice && (
-            <p role="status" className="rounded-md bg-[#ECFDF5] p-3 text-sm text-[#047857]">
-              {notice}
-            </p>
-          )}
-          {isConfirming && overdueInvoice && (
-            <div className="mt-4 rounded-lg border border-[#BFDBFE] bg-[#EFF6FF] p-4">
-              <p className="m-0 text-sm font-semibold text-[#374151]">
-                Record {overdueInvoice.cells[2]} for {overdueInvoice.cells[0]}?
-              </p>
-              <p className="mb-4 mt-1 text-sm text-[#6B7280]">
-                This preview updates the invoice status locally.
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <BigButton variant="primary" onClick={recordPayment}>
-                  Confirm payment
-                </BigButton>
-                <BigButton variant="ghost" onClick={() => setIsConfirming(false)}>
-                  Cancel
-                </BigButton>
+      <Tabs
+        selectedIndex={selectedTab}
+        onChange={({ selectedIndex }) =>
+          setSearchParams(selectedIndex === 1 ? { view: 'seats' } : {})
+        }
+      >
+        <TabList aria-label="Billing views" contained>
+          <Tab>Customer invoices</Tab>
+          <Tab>Subscription & seats</Tab>
+        </TabList>
+        <TabPanels>
+          <TabPanel>
+            <div className="section-stack">
+              <div className="section-heading">
+                <div>
+                  <p className="tile-kicker">Accounts receivable</p>
+                  <p className="supporting-copy">All amounts are USD. Ledger refreshed today at 09:40.</p>
+                </div>
+                <div className="action-row">
+                  <Button kind="tertiary" renderIcon={ArrowRight} onClick={() => navigate('/billing/aging')}>
+                    AR aging
+                  </Button>
+                  <Button
+                    renderIcon={Add}
+                    disabled={outstandingInvoices.length === 0}
+                    onClick={() => {
+                      const invoice = outstandingInvoices[0]
+                      setSelectedInvoice(invoice)
+                      setAmount(invoice.balance)
+                      setReference('')
+                      setPaymentOpen(true)
+                    }}
+                  >
+                    Record payment
+                  </Button>
+                </div>
               </div>
+              <CarbonTable
+                title="Open invoices"
+                description={`${outstandingInvoices.length} invoice needs action`}
+                headers={headers}
+                rows={invoices}
+                renderCell={(cell) =>
+                  cell.info.header === 'status' ? <StatusTag status={cell.value} /> : cell.value
+                }
+              />
             </div>
-          )}
-          {!overdueInvoice && !notice && (
-            <p className="rounded-md bg-[#ECFDF5] p-3 text-sm text-[#047857]">
-              All listed invoices are paid.
-            </p>
-          )}
-          <TableV2 headers={invoiceRows.headers} dataRows={rows} />
-        </div>
+          </TabPanel>
+          <TabPanel>
+            <div className="split-layout section-stack">
+              <Tile className="detail-tile">
+                <p className="tile-kicker">Acme Pro annual</p>
+                <p className="metric-tile__value">{seats} / 5 seats used</p>
+                <p className="supporting-copy">
+                  Your team is at capacity. Additional seats are billed at $24 per member each month,
+                  prorated for the current term.
+                </p>
+                <Button renderIcon={Add} onClick={() => setSeatModalOpen(true)}>
+                  Add seat capacity
+                </Button>
+              </Tile>
+              <Tile className="detail-tile">
+                <p className="tile-kicker">Next renewal</p>
+                <p className="metric-tile__value">Dec 01</p>
+                <p className="supporting-copy">Current annual commitment: $1,440 before tax.</p>
+              </Tile>
+            </div>
+          </TabPanel>
+        </TabPanels>
+      </Tabs>
 
-        <p className="text-sm text-[#9CA3AF]">
-          Next:{' '}
-          <Link to="/team" className="text-[#2563EB] no-underline hover:underline">
-            assign cost centers by team
-          </Link>
-          {' · '}
-          <Link to="/integrations" className="text-[#2563EB] no-underline hover:underline">
-            connect QuickBooks
-          </Link>
-        </p>
-      </div>
-    </div>
+      <Modal
+        open={paymentOpen}
+        modalHeading="Record payment"
+        primaryButtonText="Save payment"
+        secondaryButtonText="Cancel"
+        primaryButtonDisabled={paymentInvalid}
+        onRequestClose={() => setPaymentOpen(false)}
+        onRequestSubmit={submitPayment}
+      >
+        <div className="field-stack">
+          <div className="modal-summary">
+            <div>
+              <p className="tile-kicker">Invoice</p>
+              <p>{selectedInvoice.id}</p>
+            </div>
+            <div>
+              <p className="tile-kicker">Outstanding balance</p>
+              <p>${selectedInvoice.balance} USD</p>
+            </div>
+          </div>
+          <NumberInput
+            id="payment-amount"
+            label="Payment amount (USD)"
+            min={1}
+            max={selectedInvoice.balance}
+            value={amount}
+            invalid={amountInvalid}
+            invalidText={`Enter an amount between $1 and $${selectedInvoice.balance}.`}
+            onChange={(event, { value }) => setAmount(Number(value))}
+          />
+          <TextInput id="payment-date" type="date" labelText="Payment date" defaultValue="2026-06-24" />
+          <Dropdown
+            id="payment-method"
+            titleText="Payment method"
+            label="Choose a method"
+            items={paymentMethods}
+            selectedItem={method}
+            onChange={({ selectedItem }) => setMethod(selectedItem)}
+          />
+          <TextInput
+            id="payment-reference"
+            labelText="Reference"
+            value={reference}
+            invalid={duplicateReference}
+            invalidText="This reference already exists. Enter a unique payment reference."
+            onChange={(event) => setReference(event.target.value)}
+            placeholder="For example, BANK-00831"
+          />
+        </div>
+      </Modal>
+
+      <Modal
+        open={seatModalOpen}
+        modalHeading="Review capacity change"
+        primaryButtonText="Confirm 2 additional seats"
+        secondaryButtonText="Cancel"
+        onRequestClose={() => setSeatModalOpen(false)}
+        onRequestSubmit={() => {
+          setSeats(5)
+          setNotice('Capacity increased to 7 seats. Two seats are now available for invitations.')
+          setSeatModalOpen(false)
+        }}
+      >
+        <div className="field-stack">
+          <InlineNotification
+            kind="info"
+            title="$48.00 monthly increase"
+            subtitle="$19.20 prorated charge today. New annual total: $2,016 before tax."
+            hideCloseButton
+            lowContrast
+          />
+          <p className="supporting-copy">
+            Capacity will increase from 5 to 7 seats. You can return to Team and complete the
+            interrupted invitation.
+          </p>
+          <Button kind="ghost" renderIcon={Renew} onClick={() => navigate('/team')}>
+            Return to Team without changing
+          </Button>
+        </div>
+      </Modal>
+    </PageLayout>
   )
 }

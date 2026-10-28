@@ -1,113 +1,208 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import NavBar from '../components/NavBar.jsx'
-import BigButton from '../components/BigButton.jsx'
-import { InputField } from '../components/InputField.jsx'
-import UseCaseBrief from '../components/UseCaseBrief.jsx'
+import { useNavigate } from 'react-router-dom'
+import {
+  Button,
+  Dropdown,
+  InlineNotification,
+  Modal,
+  TextInput,
+  Tile,
+} from '@carbon/react'
+import { Add, Renew, TrashCan } from '@carbon/icons-react'
+import PageLayout from '../components/PageLayout.jsx'
+import CarbonTable from '../components/CarbonTable.jsx'
+import StatusTag from '../components/StatusTag.jsx'
 
-const people = [
-  { id: '1', name: 'Alex Rivera', role: 'Admin' },
-  { id: '2', name: 'Jordan Lee', role: 'Editor' },
-  { id: '3', name: 'Sam Patel', role: 'Viewer' },
-  { id: '4', name: 'Riley Chen', role: 'Editor' },
+const initialMembers = [
+  { id: 'alex', member: 'Alex Rivera', email: 'alex@acme.test', role: 'Admin', status: 'Active' },
+  { id: 'jordan', member: 'Jordan Lee', email: 'jordan@acme.test', role: 'Editor', status: 'Active' },
+  { id: 'sam', member: 'Sam Patel', email: 'sam@acme.test', role: 'Viewer', status: 'Active' },
+  { id: 'riley', member: 'Riley Chen', email: 'riley@acme.test', role: 'Editor', status: 'Active' },
+]
+
+const headers = [
+  { key: 'member', header: 'Member' },
+  { key: 'email', header: 'Email' },
+  { key: 'role', header: 'Role' },
+  { key: 'status', header: 'Status' },
+  { key: 'actions', header: 'Actions' },
+]
+
+const roles = [
+  { id: 'Admin', text: 'Admin · Manage workspace, billing, and members' },
+  { id: 'Editor', text: 'Editor · Create and update operational content' },
+  { id: 'Viewer', text: 'Viewer · Read-only access' },
 ]
 
 export default function TeamMembersScreen() {
   const navigate = useNavigate()
-  const [members, setMembers] = useState(people)
+  const [members, setMembers] = useState(initialMembers)
+  const [inviteOpen, setInviteOpen] = useState(false)
   const [inviteEmail, setInviteEmail] = useState('')
-  const [isInviting, setIsInviting] = useState(false)
+  const [role, setRole] = useState(roles[2])
   const [notice, setNotice] = useState('')
+  const hasSeat = members.length < 5
+  const invalidEmail = inviteEmail.length > 0 && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail)
+  const duplicateEmail = members.some(
+    (member) => member.email.toLowerCase() === inviteEmail.trim().toLowerCase(),
+  )
 
-  const inviteMember = () => {
-    const email = inviteEmail.trim()
-    if (!email) return
-
-    setMembers((currentMembers) => [
-      ...currentMembers,
-      { id: `invite-${email}`, name: email, role: 'Viewer · Invited' },
-    ])
+  const sendInvitation = () => {
+    const pendingMember = {
+      id: `invite-${Date.now()}`,
+      member: inviteEmail.split('@')[0],
+      email: inviteEmail.trim(),
+      role: role.id,
+      status: 'Pending',
+      actions: '',
+    }
+    setMembers((current) => [...current, pendingMember])
+    setNotice(`Invitation sent to ${pendingMember.email} as ${pendingMember.role}.`)
     setInviteEmail('')
-    setIsInviting(false)
-    setNotice(`Invitation prepared for ${email}.`)
+    setInviteOpen(false)
+  }
+
+  const updateInvitation = (id, action) => {
+    if (action === 'revoke') {
+      setMembers((current) => current.filter((member) => member.id !== id))
+      setNotice('Pending invitation revoked.')
+      return
+    }
+    if (action === 'accept') {
+      setMembers((current) =>
+        current.map((member) => (member.id === id ? { ...member, status: 'Active' } : member)),
+      )
+      setNotice('Invitation accepted. The member now has active access.')
+      return
+    }
+    setNotice('Invitation resent. The pending status and assigned role were preserved.')
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <NavBar brand="Acme" />
-      <div className="max-w-xl px-6 py-8">
-        <h1 className="mb-2 text-2xl font-semibold text-[#374151]">Team & access</h1>
-        <p className="mb-6 text-sm text-[#6B7280]">
-          Invite members, then wire billing and integrations from the header nav.
-        </p>
-
-        <UseCaseBrief
-          audience="Workspace admins managing membership and permissions."
-          value="Makes access visible and connects seat ownership to billing."
-          objective="Invite a teammate, review their role, and understand the impact on paid seats."
+    <PageLayout
+      eyebrow="Administration"
+      title="Team & access"
+      description="Manage workspace membership, invitation status, permissions, and seat capacity."
+      brief={{
+        audience: 'Workspace admins managing membership and permissions.',
+        value: 'Makes roles, invitation status, and paid-seat impact visible in one place.',
+        objective: 'Invite a teammate with the intended role and retain a clear next action.',
+      }}
+    >
+      {notice && (
+        <InlineNotification
+          kind="success"
+          title="Team updated"
+          subtitle={notice}
+          lowContrast
+          onCloseButtonClick={() => setNotice('')}
         />
+      )}
 
-        {notice && (
-          <p role="status" className="mt-5 rounded-md bg-[#ECFDF5] p-3 text-sm text-[#047857]">
-            {notice}
+      <div className="split-layout section-stack">
+        <Tile className="detail-tile">
+          <p className="tile-kicker">Seat capacity</p>
+          <p className="metric-tile__value">{members.length} / 5 used</p>
+          <p className="supporting-copy">
+            {hasSeat ? 'A seat is available for a new invitation.' : 'Add capacity before inviting another member.'}
           </p>
-        )}
-
-        <ul className="mt-5 list-none p-0">
-          {members.map((p) => (
-            <li
-              key={p.id}
-              className="flex items-center justify-between border-b border-[#E5E7EB] px-4 py-3 text-sm"
-            >
-              <span className="font-semibold text-[#374151]">{p.name}</span>
-              <span className="text-[#6B7280]">{p.role}</span>
-            </li>
-          ))}
-        </ul>
-
-        <div className="mt-6 flex flex-wrap gap-3">
-          <BigButton
-            variant="ghost"
-            onClick={() => {
-              setNotice('')
-              setIsInviting(true)
-            }}
-          >
-            Invite user
-          </BigButton>
-          <BigButton variant="primary" onClick={() => navigate('/billing')}>
-            Open billing for seats
-          </BigButton>
-        </div>
-
-        {isInviting && (
-          <div className="mt-4 rounded-lg border border-[#E5E7EB] bg-[#F9FAFB] p-4">
-            <InputField
-              labelText="Teammate email"
-              id="invite-email"
-              value={inviteEmail}
-              onChange={(event) => setInviteEmail(event.target.value)}
-              placeholder="name@company.com"
-            />
-            <div className="flex flex-wrap gap-2">
-              <BigButton variant="primary" onClick={inviteMember}>
-                Send invitation
-              </BigButton>
-              <BigButton variant="ghost" onClick={() => setIsInviting(false)}>
-                Cancel
-              </BigButton>
-            </div>
-          </div>
-        )}
-
-        <p className="mt-6 text-sm text-[#9CA3AF]">
-          Also try the{' '}
-          <Link to="/integrations" className="text-[#3B82F6] no-underline hover:underline">
-            integrations hub
-          </Link>{' '}
-          for Slack notifications.
-        </p>
+          {!hasSeat && (
+            <Button kind="tertiary" onClick={() => navigate('/billing?view=seats')}>
+              Review seat cost
+            </Button>
+          )}
+        </Tile>
+        <Tile className="detail-tile">
+          <p className="tile-kicker">Role model</p>
+          <p className="supporting-copy">
+            Admins manage billing and access. Editors update operational content. Viewers have
+            read-only access.
+          </p>
+        </Tile>
       </div>
-    </div>
+
+      <div className="section-stack">
+        <div className="section-heading">
+          <p className="supporting-copy">Pending invitations can be resent, revoked, or accepted in this preview.</p>
+          <Button renderIcon={Add} disabled={!hasSeat} onClick={() => setInviteOpen(true)}>
+            Invite member
+          </Button>
+        </div>
+        <CarbonTable
+          title="Workspace members"
+          description={`${members.length} of 5 seats used`}
+          headers={headers}
+          rows={members.map((member) => ({ ...member, actions: member.status }))}
+          renderCell={(cell, row) => {
+            if (cell.info.header === 'status') return <StatusTag status={cell.value} />
+            if (cell.info.header === 'actions' && cell.value === 'Pending') {
+              return (
+                <div className="inline-actions">
+                  <Button
+                    kind="ghost"
+                    size="sm"
+                    renderIcon={Renew}
+                    iconDescription="Resend invitation"
+                    hasIconOnly
+                    onClick={() => updateInvitation(row.id, 'resend')}
+                  />
+                  <Button
+                    kind="ghost"
+                    size="sm"
+                    renderIcon={TrashCan}
+                    iconDescription="Revoke invitation"
+                    hasIconOnly
+                    onClick={() => updateInvitation(row.id, 'revoke')}
+                  />
+                  <Button kind="ghost" size="sm" onClick={() => updateInvitation(row.id, 'accept')}>
+                    Mark accepted
+                  </Button>
+                </div>
+              )
+            }
+            return cell.info.header === 'actions' ? '—' : cell.value
+          }}
+        />
+      </div>
+
+      <Modal
+        open={inviteOpen}
+        modalHeading="Invite a teammate"
+        primaryButtonText="Send invitation"
+        secondaryButtonText="Cancel"
+        primaryButtonDisabled={!inviteEmail || invalidEmail || duplicateEmail}
+        onRequestClose={() => setInviteOpen(false)}
+        onRequestSubmit={sendInvitation}
+      >
+        <div className="field-stack">
+          <TextInput
+            id="invite-email"
+            type="email"
+            labelText="Work email"
+            placeholder="name@company.com"
+            value={inviteEmail}
+            invalid={invalidEmail || duplicateEmail}
+            invalidText={duplicateEmail ? 'This person is already a member or invited.' : 'Enter a valid email address.'}
+            onChange={(event) => setInviteEmail(event.target.value)}
+          />
+          <Dropdown
+            id="invite-role"
+            titleText="Role"
+            label="Choose a role"
+            items={roles}
+            itemToString={(item) => item?.text || ''}
+            selectedItem={role}
+            onChange={({ selectedItem }) => setRole(selectedItem)}
+          />
+          <InlineNotification
+            kind="info"
+            title="One seat will be reserved"
+            subtitle="The seat remains assigned while this invitation is pending."
+            hideCloseButton
+            lowContrast
+          />
+        </div>
+      </Modal>
+    </PageLayout>
   )
 }

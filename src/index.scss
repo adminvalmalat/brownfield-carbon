@@ -1,0 +1,266 @@
+@use '@carbon/react';
+@use '@carbon/styles/scss/spacing';
+@use '@carbon/styles/scss/breakpoint';
+
+@font-face {
+  font-family: 'Inter:Bold';
+  src: url('https://static.figma.com/font/Inter_1') format('woff2');
+  font-style: normal;
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: 'Inter:Medium';
+  src: url('https://static.figma.com/font/Inter_1') format('woff2');
+  font-style: normal;
+  font-weight: 500;
+}
+
+@font-face {
+  font-family: 'Inter:Regular';
+  src: url('https://static.figma.com/font/Inter_1') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Inter:Semi Bold';
+  src: url('https://static.figma.com/font/Inter_1') format('woff2');
+  font-style: normal;
+  font-weight: 600;
+}
+
+@font-face {
+  font-family: 'Noto Sans Math:Regular';
+  src: url('https://static.figma.com/font/NotoSansMath-Regular_1') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Noto Sans Symbols2:Regular';
+  src: url('https://static.figma.com/font/NotoSansSymbols2-Regular_5') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Noto Sans Symbols:Regular';
+  src: url('https://static.figma.com/font/NotoSansSymbols-VF_2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: 'Noto Sans:Regular';
+  src: url('https://static.figma.com/font/NotoSans-VF_3') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+}
+
+:root {
+  font-family: 'Inter:Regular', 'Noto Sans:Regular', sans-serif;
+}
+
+body {
+  margin: 0;
+  background: var(--cds-background);
+  color: var(--cds-text-primary);
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+.app-shell {
+  min-height: 100dvh;
+  background: var(--cds-background);
+}
+
+.app-content {
+  padding: spacing.$spacing-07;
+}
+
+.page-heading {
+  display: grid;
+  gap: spacing.$spacing-03;
+  margin-block-end: spacing.$spacing-07;
+}
+
+.page-heading__eyebrow {
+  color: var(--cds-text-secondary);
+  font-family: 'Inter:Semi Bold', sans-serif;
+  font-size: var(--cds-label-01-font-size);
+  letter-spacing: var(--cds-label-01-letter-spacing);
+  line-height: var(--cds-label-01-line-height);
+  text-transform: uppercase;
+}
+
+.page-heading__title {
+  font-family: 'Inter:Bold', sans-serif;
+}
+
+.page-heading__description,
+.supporting-copy {
+  color: var(--cds-text-secondary);
+  max-width: 64ch;
+}
+
+.use-case-brief {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: spacing.$spacing-05;
+  margin-block-end: spacing.$spacing-07;
+  padding: spacing.$spacing-05;
+  border-inline-start: spacing.$spacing-02 solid var(--cds-border-interactive);
+  background: var(--cds-layer-accent-01);
+}
+
+.use-case-brief__label {
+  margin-block-end: spacing.$spacing-02;
+  color: var(--cds-text-secondary);
+  font-family: 'Inter:Semi Bold', sans-serif;
+}
+
+.metric-grid,
+.integration-grid,
+.report-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: spacing.$spacing-05;
+}
+
+.integration-grid,
+.report-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.metric-tile,
+.integration-tile,
+.detail-tile {
+  min-height: 100%;
+}
+
+.metric-tile {
+  cursor: pointer;
+}
+
+.metric-tile__label,
+.tile-kicker {
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-label-01-font-size);
+}
+
+.metric-tile__value {
+  margin-block: spacing.$spacing-04;
+  font-family: 'Inter:Semi Bold', sans-serif;
+  font-size: var(--cds-heading-04-font-size);
+  line-height: var(--cds-heading-04-line-height);
+}
+
+.metric-tile__footer {
+  color: var(--cds-text-helper);
+  font-size: var(--cds-helper-text-01-font-size);
+}
+
+.section-stack {
+  display: grid;
+  gap: spacing.$spacing-05;
+  margin-block-start: spacing.$spacing-07;
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: spacing.$spacing-05;
+}
+
+.action-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: spacing.$spacing-04;
+  align-items: center;
+}
+
+.field-stack {
+  display: grid;
+  gap: spacing.$spacing-05;
+}
+
+.split-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: spacing.$spacing-07;
+}
+
+.status-line {
+  display: flex;
+  align-items: center;
+  gap: spacing.$spacing-03;
+  flex-wrap: wrap;
+}
+
+.table-link {
+  color: var(--cds-link-primary);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.table-link:hover {
+  text-decoration: underline;
+}
+
+.empty-state {
+  display: grid;
+  justify-items: start;
+  gap: spacing.$spacing-05;
+  padding: spacing.$spacing-08;
+  border: var(--cds-border-subtle-01) dashed spacing.$spacing-01;
+  background: var(--cds-layer-01);
+}
+
+.modal-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: spacing.$spacing-05;
+  padding: spacing.$spacing-05;
+  background: var(--cds-layer-02);
+}
+
+.inline-actions {
+  display: flex;
+  gap: spacing.$spacing-03;
+  flex-wrap: wrap;
+}
+
+.cds--content {
+  min-height: calc(100dvh - #{spacing.$spacing-09});
+}
+
+@include breakpoint.breakpoint-down('lg') {
+  .metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .integration-grid,
+  .report-grid,
+  .split-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@include breakpoint.breakpoint-down('md') {
+  .app-content {
+    padding: spacing.$spacing-05;
+  }
+
+  .metric-grid,
+  .use-case-brief {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-summary {
+    grid-template-columns: 1fr;
+  }
+}
